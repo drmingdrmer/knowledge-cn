@@ -2,27 +2,27 @@
 
 Source article: [重新理解分布式共识：Raft 与 Paxos 的共同结构](/Users/drdrxp/xp/vcs/github.com/openacid/openacid.github.io/_draft/raft-intuitive/2026-08-08-raft-intuitive-cn.md).
 
-The original extraction proposal contains **23 cards: 19 new cards and four existing cards to expand**. The DAG execution extension below adds **seven cards**, bringing the plan to **30 cards**. The Chinese canvas currently contains card 1 and all seven extension cards.
+This plan contains **30 cards: 23 Raft and Paxos cards and seven DAG execution cards**. The Chinese canvas contains **15 completed cards: 1–8 and 24–30**. Cards 9–23 remain to be created. Linked titles below point to completed Chinese cards.
 
 Each card should state one claim, its assumptions, and a short proof. In the table, `6, 10 → 11` means card 11 uses both cards 6 and 10. Definitions and protocol rules enter the graph as explicit premises.
 
-## Proposed cards and their proof premises
+## Raft and Paxos cards and their proof premises
 
 | ID | Knowledge card and its main claim | Direct proof premises |
 |---|---|---|
-| 1 | **Deterministic State Machines.** The same initial state and command sequence produce the same state and outputs. | Deterministic state-machine model |
-| 2 | **Prefix-compatible histories.** Replicas may execute different-length prefixes while agreeing throughout their shared execution. | 1 |
-| 3 | **Immutable history trees.** Each globally unique node ID identifies one immutable parent and command. | Model assumptions: `cm1`–`cm3` |
-| 4 | **Monotone union.** Compatible history trees merge by union without overwriting nodes. Concurrent branches remain represented. | 3 |
-| 5 | **Majority intersection — existing.** Two majorities of the same replica set share a member. | Counting argument |
-| 6 | **Quorum intersection — existing.** Every allowed read quorum must intersect every allowed write quorum. | Explicit quorum assumption; 5 proves the majority case |
-| 7 | **Durable evidence.** Acknowledged history, accepted proposals, and promises survive the crashes allowed by the model. | Crash/recovery and storage assumptions |
-| 8 | **Quorum visibility.** After a completed write, every later completed quorum read discovers its immutable history. | 4, 6, 7 |
+| 1 | **[Deterministic State Machines](../notes/distributed-consensus/deterministic-state-machine.md).** The same initial state and command sequence produce the same state and outputs. | Deterministic state-machine model |
+| 2 | **[Prefix-compatible histories](../notes/distributed-consensus/prefix-compatible-histories.md).** Replicas may execute different-length prefixes while agreeing throughout their shared execution. | 1 |
+| 3 | **[Immutable history trees](../notes/distributed-consensus/immutable-history-trees.md).** Each globally unique node ID identifies one immutable parent and command. | Model assumptions: `cm1`–`cm3` |
+| 4 | **[Monotone union](../notes/distributed-consensus/monotone-union.md).** Compatible history trees merge by union without overwriting nodes. Concurrent branches remain represented. | 3 |
+| 5 | **[Majority intersection](../notes/distributed-consensus/majority.md).** Two majorities of the same replica set share a member. | Counting argument |
+| 6 | **[Quorum intersection](../notes/distributed-consensus/quorum-intersection.md).** Every allowed read quorum must intersect every allowed write quorum. | Explicit quorum assumption; 5 proves the majority case |
+| 7 | **[Durable evidence](../notes/distributed-consensus/durable-evidence.md).** Acknowledged history, accepted proposals, and promises survive the crashes allowed by the model. | Crash/recovery and storage assumptions; evidence still required by the protocol |
+| 8 | **[Quorum visibility](../notes/distributed-consensus/quorum-visibility.md).** After a completed write, every later completed quorum read discovers its immutable history. | 4, 6, 7; write-acknowledgement and fresh full-history read rules |
 | 9 | **Writer epochs and history ancestry are different orders.** A higher ballot or term identifies a newer attempt; ancestry identifies which commands it preserves. | Definitions of epoch order and history ancestry |
-| 10 | **Acceptor promises — existing.** Recording a durable promise before returning accepted state prevents later acceptance of lower ballots. | 7, 9; promise-and-read protocol rule |
+| 10 | **Acceptor promises.** Recording a durable promise before returning accepted state prevents later acceptance of lower ballots. | 7, 9; promise-and-read protocol rule |
 | 11 | **The fenced-quorum witness.** Any lower ballot that can still become chosen has a prepare-quorum member that accepted it before promising. | 6, 10 |
 | 12 | **Highest-accepted-value adoption.** Adopting the highest accepted ballot’s value preserves any previously chosen value. | 9, 11; adoption rule; induction over ballots |
-| 13 | **Single-decree Paxos — existing.** All chosen proposals contain the same value. | 12; unique ballots and quorum acceptance |
+| 13 | **Single-decree Paxos.** All chosen proposals contain the same value. | 12; unique ballots and quorum acceptance |
 | 14 | **Raft Election Safety.** Majority intersection and one durable vote per term permit at most one leader per term. | 5, 7; voting rule |
 | 15 | **Raft Log Matching.** Matching `(term, index)` entries imply matching prefixes. | 14; leader append rules and AppendEntries consistency checks |
 | 16 | **Raft election freshness.** Granted votes certify that the candidate is at least as up-to-date as every granting voter. | Voting rule comparing `(lastLogTerm, lastLogIndex)` |
@@ -37,6 +37,9 @@ Each card should state one claim, its assumptions, and a short proof. In the tab
 ## Central proof paths
 
 ```text
+Deterministic state machine → Prefix-compatible execution
+
+Majority intersection → Quorum intersection (majority case)
 Immutable nodes → Monotone union ──────────────┐
 Quorum intersection + Durable storage ────────┴→ Quorum visibility
 
