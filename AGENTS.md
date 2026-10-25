@@ -47,6 +47,22 @@ Put publishing and development instructions in the README.
 
 ## Card writing: title, conclusion, proof, then supporting details
 
+Keep each card focused on one independently referenceable definition, protocol
+rule, counterexample, or conclusion. Its proof and examples must support that
+one point. Split out another conclusion when it can serve as a separate premise
+or has different proof dependencies. Reuse existing premise cards instead of
+repeating their content.
+
+For consensus, introduce quorum, read quorum, write quorum, and quorum
+intersection as basic concepts. Use majority as a quorum configuration example.
+State which quorum families must intersect in each proof.
+
+Treat a complete workflow or source section as a canvas group when it contains
+several knowledge points. In plans, distinguish groups from individual cards.
+Choose card boundaries by the knowledge being proved, rather than word counts
+or individual algorithm steps. Draw dependency arrows only when the source card
+is used to prove the target card; use groups for reading order and motivation.
+
 Arrange each card from the most important information to supplementary details:
 
 1. Start with one main title using `#`.
@@ -67,6 +83,21 @@ conclusion, with later sections below the initial viewport. Readers select a
 card and press Space to expand it. Keep the full note in the same Markdown file.
 Check that the opening conclusion fits and the first subheading stays below
 the collapsed card's viewport. Use compact spacing to keep proof paths visible.
+
+## Canvas kinds and connections
+
+Follow the renderer's [board conventions](../obsidian-canvas-render/CONVENTIONS.md).
+
+- Concepts have no color. Theorems use cyan (`"5"`), explanations yellow
+  (`"3"`), examples green (`"4"`), and warnings red (`"1"`).
+- Proof dependencies keep the default gray, leave the premise's right side,
+  and enter the conclusion's left side with an arrow. Place conclusions
+  farther right than their premises.
+- Optional examples, explanations, and warnings hang below their parent:
+  use a green (`"4"`) edge from the parent's bottom to the detail's top.
+- Related topics use purple (`"6"`) edges between top sides.
+- Orange (`"2"`) is reserved for renderer previews. Hex colors carry no
+  semantic kind. Group colors distinguish areas; keep red for warnings.
 
 ## Remote renderer
 

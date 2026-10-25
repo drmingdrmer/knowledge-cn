@@ -1,25 +1,23 @@
-# Quorum 相交约束：每个读集合都与每个写集合重叠
+# Quorum Intersection：任意读写集合相交
 
-协议需要选定读 Quorum 与写 Quorum，使每个允许的读 Quorum 都与每个允许的写 Quorum 至少共享一个成员。读写两边都使用同一固定成员集合的多数派，就满足这一约束。
+协议要求每个允许的 Read Quorum 都与每个允许的 Write Quorum 至少共享一个成员。这项跨集合族的相交约束，为后续读取提供曾参与写入的副本。
 
-## 推导：先规定集合族，再证明跨集合族相交
+## 约束：检查全部允许的读写组合
 
-Quorum 是足以完成某个协议步骤的参与者集合。Quorum 相交性（Quorum Intersection）是对允许集合的设计约束。
+协议分别规定[[read-quorum|读 Quorum]] 与[[write-quorum|写 Quorum]] 集合族。对每个允许的 `read_set` 和每个允许的 `write_set`，都要求 `read_set ∩ write_set ≠ ∅`。
 
-在本历史存储模型中，写入者等待一个写 Quorum 全部确认，读取者收集一个读 Quorum 的全部回复。相交约束为后续读取提供至少一个曾确认写入的成员。
+这是原文 `cm4-quorum-intersection` 明确增加的协议约束。相交成员如何将写入证据带入读结果，由[[quorum-visibility|Quorum 可见性]]另行证明。选举等其他步骤所需的相交关系，在对应协议卡片中分别声明。
 
-如果读写两边都使用多数派，根据[[majority|多数派相交性]]，每一种允许的读写组合都相交。Canvas 中从多数派相交性到本卡片的箭头，证明的是这个特例。
+## 例子：读写都采用多数派
 
-设成员总数为 `member_count`，读、写 Quorum 的最小人数分别为 `read_count` 和 `write_count`。如果允许任意满足人数要求的子集，`read_count + write_count > member_count` 就足以保证相交：若某对读写集合互不相交，它们的总人数就会超过整个成员集合。
+多数派（Majority）是超过同一个固定成员集合半数的子集。若两个多数派互不相交，它们的总人数就超过整个成员集合，产生矛盾。因此，读写都使用多数派是一种满足相交约束的配置。
 
-## 例子：五个副本可以使用读二写四
+五个副本中，读写都允许任意三个参与。例如，读集合 `{A, B, C}` 与写集合 `{C, D, E}` 共享成员 `C`。
 
-成员总数为五时，可以选择任意四个成员作为写 Quorum，任意两个成员作为读 Quorum。由于 `4 + 2 > 5`，每个读 Quorum 都与每个写 Quorum 相交。
+## 例子：读二写四也满足相交约束
 
-## 补充：不同协议步骤需要各自的相交论证
+五个副本中，读集合允许任意两个，写集合允许任意四个。若某对读写集合互不相交，就需要至少六个成员，与总人数五矛盾。因此每种允许的读写组合都相交。
 
-这里的读写名称对应存储操作。Paxos 中准备阶段与接受阶段使用的 Quorum，也需要跨阶段相交。具体协议还需结合持久化、承诺和提案选择规则来利用交集中的成员。
+## 来源：原文的 cm4-quorum-intersection
 
-## 来源：跨阶段相交允许不同大小的 Quorum
-
-[Flexible Paxos: Quorum intersection revisited](https://arxiv.org/pdf/1608.06696)；[Paxos Made Simple，第 2.2 节](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)。
+《重新理解分布式共识：Raft 与 Paxos 的共同结构》“从 fault tolerance 到 quorum”（153–162 行）。本卡片以一般读写相交约束为前提，多数派作为一种具体配置。

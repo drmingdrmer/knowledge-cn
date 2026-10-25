@@ -1,65 +1,210 @@
-# Raft and Paxos knowledge extraction plan
+# 按原文推导顺序提取 Raft 与 Paxos 知识卡片
 
-Source article: [重新理解分布式共识：Raft 与 Paxos 的共同结构](/Users/drdrxp/xp/vcs/github.com/openacid/openacid.github.io/_draft/raft-intuitive/2026-08-08-raft-intuitive-cn.md).
+计划以[《重新理解分布式共识：Raft 与 Paxos 的共同结构》](/Users/drdrxp/xp/vcs/github.com/openacid/openacid.github.io/_draft/raft-intuitive/2026-08-08-raft-intuitive-cn.md)为主线：先证明历史树读写协议已构成多历史 consensus，再通过分支选择、历史追加和读前禁写构造单历史流程，最后映射到 Paxos 与 Raft。
 
-This plan contains **30 cards: 23 Raft and Paxos cards and seven DAG execution cards**. The Chinese canvas contains **15 completed cards: 1–8 and 24–30**. Cards 9–23 remain to be created. Linked titles below point to completed Chinese cards.
+已完成 **25 张卡片（#1–8、#5.1–5.2、#9.1–9.5、#10.1–10.3、#24–30）**。卡片按独立知识点编号，每个表格条目对应一张卡片，章节与完整流程作为 Canvas 分组。最终卡片数量随证明需要调整。下文原文行号对应本次读取的 431 行版本，章节名用于后续定位。
 
-Each card should state one claim, its assumptions, and a short proof. In the table, `6, 10 → 11` means card 11 uses both cards 6 and 10. Definitions and protocol rules enter the graph as explicit premises.
+## 每张卡片只承载一个可独立引用的知识点
 
-## Raft and Paxos cards and their proof premises
+一张卡片表达一个定义、协议规则、反例或结论。标题和首段说清这个知识点，证明与最小例子只支持这个知识点。若某段内容可以独立成为另一张卡片的证明前提，或需要不同的证明前提，就将它拆出。
 
-| ID | Knowledge card and its main claim | Direct proof premises |
+例如，“多历史读写流程”是一个分组。提交完成的定义、追加的结构性质、并发追加的兼容性和历史承接结论分别建卡；#9.5 复用这些结论，证明多历史 consensus 已经成立。读取、取并集、写入等操作在分组中说明，已有前提卡片直接复用。
+
+卡片粒度按可独立引用的知识点划分，字数与操作步骤用于辅助判断。定义所需的简短解释、结论的证明与例子保留在同一张卡片中。
+
+## 抽取顺序沿原文推进，灰色箭头表示证明依赖
+
+原文的推导顺序是：
+
+1. 从确定性执行和公共前缀，进入允许分支的历史树。
+2. 用 `cm1`–`cm4` 建立历史树读写协议，由相容合并、单调增长、提交可见性和历史承接证明它已构成多历史 consensus（#9.5）。
+3. 为选择一条历史引入 TimePoint 偏序、单历史提交条件 `cs1`，以及扩展已读分支的规则 `cs2`。
+4. 用先读后写的并发问题，引入读前禁写 `cs3`，再组合成两阶段流程。
+5. 解释 TimePoint、两个阶段与读取方式，先使用每 term 一条 log 的简化 Raft，再分别映射到单值 Paxos 和完整 Raft。
+6. 最后处理日志分段、snapshot 和成员变更。
+
+每张卡片需标明自己给出的是定义、协议规则、反例、条件性结论，还是已经证明的定理。`6、14.1、14.2 → 15.1` 表示 #15.1 的证明使用这三张卡片。协议规则作为显式前提；解释规则时引用的概念用链接关联。灰色证明箭头从前提卡片右侧连到结论卡片左侧，前提在左，结论在右。
+
+Canvas 按渲染器约定，以无色表示概念、青色表示定理、绿色表示例子。可选反例以绿色连线从父卡片底部下挂，相关主题以紫色连线连接顶部。分组框的颜色区分区域。
+
+引入规则的动机由分组说明：并发反例说明为什么需要并发控制，具体的禁写规则仍是显式协议前提。标为“待证”或“待校验”的条目在证明完成后进入发布的 Canvas。
+
+## 已完成执行基础、历史模型与 Quorum 核心概念
+
+原文位置：“什么是 distributed consensus?”至“完整的多历史 consensus 框架”（42–203 行）。#4 是原文读写流程所需的合并引理；#7 明确故障恢复的持久化前提，原文在写栅栏处也要求持久化。
+
+Quorum 部分先介绍 #5 的一般集合概念，再介绍 #5.1 的读取集合、#5.2 的写入集合与 #6 的相交约束。多数派放在 #6 中作为具体配置的例子。概念的阅读顺序用分组和链接表达，灰色证明箭头连接到使用这些条件的结论。
+
+| ID | 已创建卡片与对应结论 | 直接证明前提 |
 |---|---|---|
-| 1 | **[Deterministic State Machines](../notes/distributed-consensus/deterministic-state-machine.md).** The same initial state and command sequence produce the same state and outputs. | Deterministic state-machine model |
-| 2 | **[Prefix-compatible histories](../notes/distributed-consensus/prefix-compatible-histories.md).** Replicas may execute different-length prefixes while agreeing throughout their shared execution. | 1 |
-| 3 | **[Immutable history trees](../notes/distributed-consensus/immutable-history-trees.md).** Each globally unique node ID identifies one immutable parent and command. | Model assumptions: `cm1`–`cm3` |
-| 4 | **[Monotone union](../notes/distributed-consensus/monotone-union.md).** Compatible history trees merge by union without overwriting nodes. Concurrent branches remain represented. | 3 |
-| 5 | **[Majority intersection](../notes/distributed-consensus/majority.md).** Two majorities of the same replica set share a member. | Counting argument |
-| 6 | **[Quorum intersection](../notes/distributed-consensus/quorum-intersection.md).** Every allowed read quorum must intersect every allowed write quorum. | Explicit quorum assumption; 5 proves the majority case |
-| 7 | **[Durable evidence](../notes/distributed-consensus/durable-evidence.md).** Acknowledged history, accepted proposals, and promises survive the crashes allowed by the model. | Crash/recovery and storage assumptions; evidence still required by the protocol |
-| 8 | **[Quorum visibility](../notes/distributed-consensus/quorum-visibility.md).** After a completed write, every later completed quorum read discovers its immutable history. | 4, 6, 7; write-acknowledgement and fresh full-history read rules |
-| 9 | **Writer epochs and history ancestry are different orders.** A higher ballot or term identifies a newer attempt; ancestry identifies which commands it preserves. | Definitions of epoch order and history ancestry |
-| 10 | **Acceptor promises.** Recording a durable promise before returning accepted state prevents later acceptance of lower ballots. | 7, 9; promise-and-read protocol rule |
-| 11 | **The fenced-quorum witness.** Any lower ballot that can still become chosen has a prepare-quorum member that accepted it before promising. | 6, 10 |
-| 12 | **Highest-accepted-value adoption.** Adopting the highest accepted ballot’s value preserves any previously chosen value. | 9, 11; adoption rule; induction over ballots |
-| 13 | **Single-decree Paxos.** All chosen proposals contain the same value. | 12; unique ballots and quorum acceptance |
-| 14 | **Raft Election Safety.** Majority intersection and one durable vote per term permit at most one leader per term. | 5, 7; voting rule |
-| 15 | **Raft Log Matching.** Matching `(term, index)` entries imply matching prefixes. | 14; leader append rules and AppendEntries consistency checks |
-| 16 | **Raft election freshness.** Granted votes certify that the candidate is at least as up-to-date as every granting voter. | Voting rule comparing `(lastLogTerm, lastLogIndex)` |
-| 17 | **Raft’s current-term commit rule.** A leader counts replicas directly only for entries from its current term. | Protocol rule; an old-term counterexample explains its necessity |
-| 18 | **Raft Leader Completeness.** Every later leader contains all committed entries. | 6, 10, 14–17 |
-| 19 | **Replicated-state-machine safety.** Replicas agree on commands at each applied index and on the resulting execution. | 1, 2, 15, 18; apply-only-committed rule |
-| 20 | **Logical history versus physical storage.** Replacing tentative data can preserve the chosen history. | 13 for Paxos; 15, 18 for Raft |
-| 21 | **Safe reads.** A read needs commitment evidence and, for leader reads, confirmation of current authority. | 8, 13, 19; read protocol |
-| 22 | **Safety and progress require different arguments.** Repeated higher promises can prevent every writer from finishing. | 10, 11; concurrent execution counterexample |
-| 23 | **Safe membership changes.** Joint quorums connect configurations while committed history carries forward. | 6, 18; configuration-transition rules |
+| 1 | [确定性状态机](../notes/distributed-consensus/deterministic-state-machine.md)：相同初态与命令序列产生相同状态和输出。 | 确定性转移模型 |
+| 2 | [前缀兼容的历史](../notes/distributed-consensus/prefix-compatible-histories.md)：不同执行进度在共同前缀上的结果相同。 | 1；序列互为前缀 |
+| 3 | [不可变历史树](../notes/distributed-consensus/immutable-history-trees.md)：节点标识固定父节点与命令。 | `cm1-history-tree`、`cm2-grow-only`、`cm3-unique-timepoint` |
+| 4 | [历史的单调合并](../notes/distributed-consensus/monotone-union.md)：兼容历史取并集，保留已有节点和并发分支。 | 3 |
+| 5 | [Quorum](../notes/distributed-consensus/quorum.md)：协议规定足以完成某个步骤的参与者集合。 | 模型定义；各步骤分别规定允许的集合族 |
+| 5.1 | [Read Quorum](../notes/distributed-consensus/read-quorum.md)：读取者收齐一个允许读集合中每个成员的当前完整历史。 | 读取规则；用于 #8 的可见性证明 |
+| 5.2 | [Write Quorum](../notes/distributed-consensus/write-quorum.md)：目标历史需要持久化到一个允许写集合的每个成员。 | 写入覆盖规则；用于 #8 的可见性证明 |
+| 6 | [Quorum 相交约束](../notes/distributed-consensus/quorum-intersection.md)：每个允许的读 Quorum 与每个允许的写 Quorum 相交。 | 协议约束 `cm4-quorum-intersection`；多数派是配置示例 |
+| 7 | [持久化证据](../notes/distributed-consensus/durable-evidence.md)：确认前持久化，恢复后保留协议所需证据。 | 崩溃恢复与存储假设 |
+| 8 | [Quorum 可见性](../notes/distributed-consensus/quorum-visibility.md)：多历史写入完成后，后续读 Quorum 能发现该历史。 | 4、5.1、5.2、6、7、9.1 |
 
-## Central proof paths
+## 已完成第九组：多历史 consensus 的可证明构造
+
+原文位置：“完整的多历史 consensus 框架”及其具体读写流程（174–203 行）。分组中说明读 Quorum → 取并集 → 追加 → 写 Quorum 的协议，接收端基于当前历史原子地取并集并持久化。#9.1–9.4 分别建立完成条件与局部性质，#9.5 给出实现多历史一致性的构造定理。
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 9.1 | [多历史提交](../notes/distributed-consensus/multi-history-commit.md)：选定写 Quorum 的全部成员持久化目标历史并确认，才宣布这次写入完成。 | 协议定义；持久化含义复用 #7；作为 #8 的完成条件 | 143–183、201 行 |
+| 9.2 | [历史树追加](../notes/distributed-consensus/history-tree-extension.md)：给已有节点添加一个全局唯一的新子节点，结果仍是合法历史树。 | 3；父节点已存在，新节点记录不可变 | 199 行 |
+| 9.3 | [并发追加的兼容性](../notes/distributed-consensus/concurrent-history-appends.md)：不同 writer 使用不同新标识追加，结果仍可取并集合并。 | 3、4、9.2 | 201–203 行 |
+| 9.4 | [后续写入的历史承接](../notes/distributed-consensus/history-carry-forward.md)：在一次写入完成后才开始读取的 writer，其新历史包含前次写入的全部记录。 | 8、9.2；writer 在完整读并集上追加并发送 | 195–201 行，结合 183–185 行 |
+| 9.5 | [多历史 consensus 构造定理](../notes/distributed-consensus/multi-history-consensus.md)：以整棵历史树为状态，协议已实现已提交历史的单调增长与后续 Quorum 读取可见性。 | 4、8、9.3、9.4；固定成员、原子只增合并与持久化模型 | “完整的多历史 consensus 框架”，174–203 行 |
+
+中文 [Canvas](../canvases/distributed-consensus.canvas) 中，#4、#8、#9.3、#9.4 的证明箭头汇入 #9.5。这是从历史树与 Quorum 基础走到多历史一致性的阶段结论；单历史部分在这个已构造的协议之上增加约束。
+
+多历史一致性的承诺明确为：已完成写入的记录并集始终是一棵合法的只增历史树，每次完成的 Quorum 读取包含在其发起前已提交的全部记录。这里按记录包含关系定义单调增长，读取也可能携带尚未提交的分支。
+
+## 已完成第十组：TimePoint 偏序、极大与最大 leaf
+
+在 #9.5 已构造的多历史协议基础上，本组开始研究单分支选择，建立比较公理、极大与最大的区别，以及存在最大 leaf 时的分支唯一性。比较范围固定为同一棵历史树的当前视图；全局提交条件与已提交历史的保留在后续卡片中处理。
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 10.1 | [TimePoint 偏序](../notes/distributed-consensus/timepoint-partial-order.md)：定义 TimePoint 的自反、反对称、传递关系，允许两个 TimePoint 不可比。 | 模型定义；具体协议的比较关系由 #17.1–17.2 校验 | 233–241 行 |
+| 10.2 | [极大 leaf 未必是最大 leaf](../notes/distributed-consensus/maximal-and-greatest-leaves.md)：两个不可比 leaf 可以同时极大，且都不是最大元。 | 用 #10.1 构造可选反例；Canvas 以绿色补充关系下挂 | 237、259 行 |
+| 10.3 | [最大 leaf 唯一确定分支](../notes/distributed-consensus/greatest-leaf-unique-branch.md)：给定同一视图与同一个偏序，最大 leaf 若存在，就唯一确定其根路径。 | 3、10.1；反对称性保证最大元唯一，历史树保证根路径唯一 | 241、247、259 行 |
+
+中文 [Canvas](../canvases/distributed-consensus.canvas) 中，“分支选择”分组包含三张卡片，灰色证明边为 `10.1 → 10.3` 与 `3 → 10.3`。#10.2 是 #10.1 的可选反例，以绿色连线下挂；#10.3 使用偏序的反对称性与历史树的唯一路径性质。
+
+## 待创建的单历史提交条件与分支追加规则
+
+保留原文的“多历史 commit”“单历史 commit”及 `cs1`、`cs2` 名称。两张协议规则卡分别定义提交条件与追加位置。
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 11 | **单历史提交条件 `cs1-global-max`**：除完成多历史提交，TimePoint 还须大于全局其他分支的 TimePoint。 | 额外模型约束；#9.1 给出多历史提交定义。可实现性另由 #16.1 校验 | 245–249 行 |
+| 12 | **沿已读分支追加 `cs2-extend-read-branch`**：新命令须追加到写前读取所选分支的末尾。 | 协议规则；追加保持结构复用 #9.2，保留已提交历史另由 #16.2 证明 | 253–263 行 |
+
+原文 237 行允许无法比较时停止读取，259 行又允许任选极大 leaf。写卡前须明确业务读取与写前候选选择各自使用的规则；#10.2 只说明偏序性质。
+
+## 读前禁写分组：局部规则与两条 Quorum 引理
+
+原文位置：“Atomic read-then-write”（267–316 行）。`cs3-write-fence` 拆为 fence 更新、写入准入、读回复证据三个知识点，再分别证明两种并发时序。
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 13 | **先读后写的并发竞态**：读到最大分支后，另一个 writer 仍能在本次写入前改变候选状态。 | 反例；#12 的追加规则允许两个 writer 交错执行 | 269–273 行 |
+| 14.1 | **fence 单调推进**：副本成功更新的 fence 按 TimePoint 偏序向前推进。 | 协议规则；确认前持久化复用 #7；相等重试的处理须明确 | 300 行 |
+| 14.2 | **写入的 fence 准入条件**：副本只接受满足 `incoming >= fence` 的写入。 | 协议规则；按 #10.1 的偏序比较，较小与不可比请求都被拒绝 | 278–280、300 行 |
+| 14.3 | **读回复携带 fence 前接受的历史**：同一副本先持久化 fence 再读取，回复包含设 fence 前已接受且应保留的历史。 | 4、7；本地接受、设 fence 与读回复的处理顺序，以及返回完整当前历史的规则 | 278、300–302 行 |
+| 15.1 | **设 fence 后才开始的冲突写入无法完成**：读 Quorum 全部设好 fence 后，才开始请求接受的较小或不可比写入无法取得写 Quorum。 | 6、14.1、14.2；交集成员的 fence 持续保留约束 | 278–280、300–314 行的组合引理 |
+| 15.2 | **仍能完成的冲突写入留下旧接受证据**：与 fence 冲突但仍完成的写入，必在读写交集中留下设 fence 前接受的历史。 | 6、14.1、14.2、14.3 | 245、278–280、300–314 行的组合引理 |
+
+“两阶段单历史写入”作为组合这些规则与引理的分组。它包含两个独立的待证目标：
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 16.1 | **两阶段成功是否满足全局最大条件（待证）**：核对局部检查与成功确认能否推出 `cs1-global-max`。 | 11、15.1、15.2；还需明确视图外未提交节点及判断时点，逐项补齐所需条件 | 245、298–314 行 |
+| 16.2 | **连续单历史提交保持历史前缀（待证）**：后一次提交的分支包含此前已提交历史。 | 9.2、9.5、10.3、11、12、15.2；在多历史协议的保证上补齐分支选择的归纳不变量 | 253–263、302–316 行 |
+
+## 算法映射分组：先比较对象，再验证 Paxos 与 Raft
+
+原文位置：“映射到 Paxos 和 Raft”（322–405 行）。先按原文引入每 term 一条 log 的简化 Raft，再扩展到 term 内多条日志。每条映射或安全性结论分别建卡；映射的前提在论文校验后写全。
+
+### TimePoint 与第一阶段分别映射
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 17.1 | **Paxos ballot 是 TimePoint 的全序实例**：全局唯一 ballot 及其全序满足 TimePoint 的偏序要求。 | 10.1；Paxos 的唯一 ballot 与排序规则 | 330–336、356 行 |
+| 17.2 | **Raft candidate ID 的偏序**：不同 term 按 term 排序，同 term 不同 candidate 不可比。 | 10.1；关系由 `(term, node_id)` 的显式比较规则定义 | 332、340–343 行 |
+| 17.3 | **writer 与 log leaf 是不同的比较对象**：选举请求中的 candidate TimePoint 与已持有日志的 leaf TimePoint 各有职责。 | 映射定义；简化 Raft 的 RequestVote 字段解释 | 366、372 行 |
+| 17.4 | **Paxos prepare 的先承诺后取证**：同一 acceptor 先持久化 promise，再返回 accepted 证据。 | 协议规则映射；返回证据是否足够由 #19.3–19.4 校验 | 352、362 行 |
+
+### 简化 Raft 的唯一 leader 与投票比较分别证明
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 18.1 | **每 term 至多一个 leader**：两个不同 candidate 无法在同一 term 都获得选举 Quorum。 | 7；选举 Quorum 两两相交、每个 voter 每 term 至多投给一个 candidate。Raft 的多数派满足这里的选举集合相交要求 | 370 行，结合 340–343 行 |
+| 18.2 | **获票 candidate 不旧于各投票者**：成功获取投票 Quorum 后，candidate 的 last log 不小于每个投票者的 last log。 | 每票的新鲜度准入规则；只推出比较结果，日志包含关系另由 #20.4 证明 | 364–368 行 |
+| 18.3 | **已产生日志的 term 唯一确定 leader**：由合法 leader 产生的日志，其标识中的 node_id 可由 term 确定。 | 18.1；日志只能由该 term 当选 leader 产生 | 370–372 行 |
+
+### 单值 Paxos 的模型、继承规则与安全性分别建卡
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 19.1 | **单值 Paxos 的一层提案树**：单个 consensus instance 的不同 ballot 提案映射为共同根下的节点。 | 映射定义；同值提案仍可具有不同 ballot | 378–382 行 |
+| 19.2 | **最高 accepted ballot 的值继承规则**：prepare 收集到接受记录时，后继提案采用其中最高 accepted ballot 对应的值。 | 协议规则；全部回复均无接受记录时可选新值 | 257、362、376–382 行的映射校验补充 |
+| 19.3 | **更高 ballot 保留已选值（待校验）**：值一旦 chosen，后继能够 chosen 的提案使用相同值。 | 6、7、17.1、17.4、19.2、21.1；同 ballot 单值规则 | 同上；以 Paxos 论文补齐归纳证明 |
+| 19.4 | **accepted 替换保留所需共识证据（待校验）**：说明保存最高 accepted 记录如何继续约束后继提案。 | 19.3；明确物理状态与抽象历史证据的对应关系 | 382 行 |
+
+### 完整 Raft 的日志位置、匹配与提交保持分别建卡
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 20.1 | **index 区分同 term 内的日志条目**：将每 term 一条 log 的模型扩展为多条 entry；index 是整条日志的位置。 | 模型定义；日志新鲜度使用 `(lastLogTerm, lastLogIndex)`，node_id 的省略复用 #18.3 | 370、384–386 行 |
+| 20.2 | **日志匹配性质（待校验）**：两个日志若在相同 index 有相同 term 的条目，则该位置及之前的日志相同。 | 18.1、20.1；leader 追加唯一性与 AppendEntries 前缀检查 | 368、388–390 行的映射校验补充 |
+| 20.3 | **Raft 的现任期提交规则**：leader 通过多数派复制判定提交时，所选提交位置须属于现任期。 | 协议规则；此前日志随该位置一并成为已提交前缀 | 405 行的实际提交条件校验 |
+| 20.4 | **Leader Completeness（待校验）**：后续 term 当选的 leader 包含此前已提交日志。 | 6、7、18.1、18.2、20.2、20.3；将选举与复制 Quorum 对应到读写相交条件，补齐选举安全性的归纳证明 | 257、265、368、384–390 行 |
+| 20.5 | **日志截断保留已提交前缀（待校验）**：冲突后缀的物理删除保留此前已提交日志。 | 20.2、20.4；定义冲突后缀替换规则与逻辑历史映射 | 388–392 行 |
+
+### 两种写入准入检查分别映射
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 21.1 | **Paxos accept 的 ballot 准入检查**：acceptor 将请求 ballot 与已持久化 promise 比较。 | 协议规则映射；对应 #14.2，比较对象由 #17.1 明确 | 398–400 行 |
+| 21.2 | **Raft AppendEntries 的 term 准入检查**：副本拒绝 term 小于 currentTerm 的请求。 | 协议规则映射；日志前缀检查在 #20.2 中处理，确认前持久化复用 #7 | 398–403 行 |
+
+Paxos prepare 返回最高接受记录，Raft 本地日志可以截断；二者与“每个副本保留完整只增历史”的差异，分别在 #19.4、#20.5 中明确对应范围。具体算法映射需逐项验证抽象模型的前提。
+
+## 存储与成员变更分组：按独立不变量拆分
+
+| ID | 单张卡片的唯一知识点 | 证明前提或规则地位 | 原文位置 |
+|---|---|---|---|
+| 22.1 | **增量复制恢复同一日志前缀**：在匹配的前缀之后逐段传输，接收端得到目标日志前缀。 | 20.2；匹配边界、分段追加与重复请求处理规则 | 411 行 |
+| 22.2 | **快照与后缀恢复同一状态**：正确边界上的状态快照，加上对应日志后缀，得到完整重放的结果。 | 1；快照状态、覆盖边界与后缀衔接条件，日志位置定义引用 #20.1 | 413 行 |
+| 23.1 | **跨配置直接取证的相交约束**：直接从历史写 Quorum 获取证据时，后续读 Quorum 须与它相交。 | 模型约束；跨配置版本的 #6，仍要求交集成员保留证据 | 421–427 行 |
+| 23.2 | **历史承接使相邻配置足够（待证）**：若每次转换都将已提交历史完整承接到新配置，历史可见性可沿配置链归纳保持。 | 4、7、8、23.1；需明确转换协议如何保证承接 | 429 行 |
+| 23.3 | **联合配置的双多数派规则（待校验）**：joint consensus 的 Quorum 同时满足旧配置与新配置的多数派要求。 | 具体协议规则；用于校验 #23.1–23.2 的实现条件 | 429–431 行的 Raft 论文校验补充 |
+| 23.4 | **配置生效时点（待校验）**：明确日志中的配置从何时开始决定选举与复制的 Quorum。 | 具体协议规则；区分追加、生效和提交时点 | 431 行的实现校验 |
+| 23.5 | **下一轮成员变更的提案条件（待校验）**：明确前一轮配置转换完成到哪个阶段，才允许提出下一轮转换。 | 具体协议规则；写清 joint 配置与最终新配置的区别 | 431 行 |
+
+## 分组内的箭头连接实际证明前提
+
+以下只列主干，完整前提见各条目的第三列。定义和协议规则作为前提卡片，阅读顺序由分组表达。
 
 ```text
-Deterministic state machine → Prefix-compatible execution
+3 → 4
+3 → 9.2
+3、4、9.2 → 9.3
+4、5.1、5.2、6、7、9.1 → 8
+8、9.2 + 发送完整历史与接收端合并规则 → 9.4
+4、8、9.3、9.4 + 原子只增合并规则 → 9.5 多历史 consensus 已成立
 
-Majority intersection → Quorum intersection (majority case)
-Immutable nodes → Monotone union ──────────────┐
-Quorum intersection + Durable storage ────────┴→ Quorum visibility
+3、10.1 → 10.3
+4、7 + 本地处理顺序与完整回复规则 → 14.3
+6、14.1、14.2 → 15.1
+6、14.1、14.2、14.3 → 15.2
 
-Quorum intersection + Durable promises
-    → Fenced-quorum witness
-    → Highest-accepted-value adoption
-    → Paxos agreement
+11、15.1、15.2 + 待明确的全局条件 ⇢ 16.1
+9.2、9.5、10.3、11、12、15.2 + 选择不变量 ⇢ 16.2
 
-Majority intersection + One vote per term
-    → Election Safety
-    → Log Matching ───────────────────────────┐
-Freshness voting + Current-term commit rule ─┴→ Leader Completeness
-    → Replicated-state-machine safety
+7 + 选举 Quorum 两两相交与每 term 一票规则 → 18.1
+18.1 + 日志生成规则 → 18.3
+6、7、17.1、17.4、19.2、21.1 + 同 ballot 单值规则 ⇢ 19.3
+6、7、18.1、18.2、20.2、20.3 ⇢ 20.4
 ```
 
-The table supplies the additional premises omitted from this compact diagram. The protocol-specific steps follow [Paxos Made Simple, §2](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf) and the [Raft paper, §§5–8](https://raft.github.io/raft.pdf).
+`→` 表示所列前提用于证明目标；`⇢` 表示尚待验证的证明依赖，完成证明后再绘制到发布的 Canvas。原文的动机、反例与流程归属用分组和文字说明表达。
+
+绿色补充关系为：#10.1 底部连接 #10.2 顶部，展示一个偏序反例。
+
+第十组已完成，下一批创建 **#11、#12、#13**。读前禁写按 #14.1–14.3、#15.1–15.2 逐个推进，完成必要证明后再创建 #16.1–16.2。
 
 ## 已创建的 DAG 执行卡片与证明关系
 
-中文 [Canvas](../canvases/distributed-consensus.canvas) 已包含[确定性状态机](../notes/distributed-consensus/deterministic-state-machine.md)及以下七张卡片。Canvas 中的箭头从证明前提指向使用前提的结论；卡片讨论的命令 DAG 则用箭头表示命令执行的先后约束。
+原文第 97 行提示了 DAG 推广；#24–30 承接后续讨论，将命令依赖 DAG 的执行性质作为独立证明分支。
+
+中文 [Canvas](../canvases/distributed-consensus.canvas) 已包含[确定性状态机](../notes/distributed-consensus/deterministic-state-machine.md)及以下七张卡片。Canvas 中的灰色箭头从证明前提指向使用前提的结论；卡片讨论的命令 DAG 则用箭头表示命令执行的先后约束。
 
 | ID | 已创建的知识卡片及主要结论 | 直接证明前提 |
 |---|---|---|
@@ -83,9 +228,19 @@ The table supplies the additional premises omitted from this compact diagram. Th
 
 持续增长的 DAG 日志还需要协议保证命令与依赖在应用前确定，并保持已执行节点的祖先集合稳定。原计划中的提案历史树与本节的命令依赖 DAG 属于不同模型；共识协议需要另行证明副本对命令与依赖达成一致。
 
-## Proposed corrections before extracting the cards
+## 原文的证明衔接在对应卡片中补齐
 
-- **Call `cm1`–`cm4` a grow-only replicated history model.** Those constraints preserve branches; agreement requires additional rules.
-- **Replace `cs1-global-max` with preservation of chosen history.** Paxos can choose a proposal while a higher ballot exists elsewhere. Ballot order alone does not prove preservation. [Paxos, §2.2](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)
-- **Make fence equality consistent.** A promise must allow its own ballot’s accept requests. [Paxos, §2.2](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)
-- **Strengthen the read rule.** Selecting the largest observed leaf can expose tentative data. Raft reads require commitment knowledge and current authority. [Raft, §8](https://raft.github.io/raft.pdf)
+保留原文模型和推导顺序，并把以下问题写成对应步骤的证明任务。模型约束的引入、协议实现该约束，以及具体算法满足同一不变量，需要分别给出依据。
+
+| 对应卡片 | 原文位置 | 写卡时需要补齐的依据 |
+|---|---|---|
+| 11、17.1–17.2 | 233–249、259 行 | 验证具体协议的比较关系满足 #10.1 的偏序公理。明确不可比视图下的读操作规则，以及“节点 TimePoint 构成全序子集”指哪一类节点。 |
+| 11、15.1–15.2、16.1 | 245、298–314 行 | writer 只观察 Quorum，需证明禁写与接受规则如何约束视图外写入，并说明局部成功检查何时满足 `cs1` 的全局条件。 |
+| 12、16.2 | 257–263 行 | 区分被读取的候选分支与已提交历史，证明分支选择和后续追加如何保留后者，并明确完成的业务读取需要什么证据。 |
+| 14.1–14.2、15.1–15.2 | 278、300、356 行 | 统一比较公式与文字中的等号边界。`!(incoming >= fence)` 允许相等的本 writer 写入；需解释不同 writer 的标识、不可比请求和重复请求。 |
+| 14.3、15.2、16.1–16.2 | 278、294–316 行 | 写清同一读 Quorum 上逐副本“先持久化 fence、再返回历史”的顺序，以及已经被接受的并发写入如何留在证据中。全局安全性另由这些性质组合证明。 |
+| 19.2–19.3、20.2–20.4 | 257、368–405 行 | 在映射阶段核对 Paxos 的最高已接受值继承，以及 Raft 的日志匹配、Leader Completeness 和现任期提交规则。算法规则卡与使用规则的安全性定理分别编写。 |
+| 19.4、20.5、22.1–22.2 | 382–390、411–413 行 | 定义逻辑历史与物理存储的对应关系，分别证明替换、截断、增量传输和快照各自保留的性质。 |
+| 23.1–23.5 | 415–431 行 | 校验配置迁移如何承接已提交历史；分别明确 Quorum 规则、配置生效时点与后继配置的提案条件。 |
+
+算法校验使用 [Paxos Made Simple，第 2–3 节](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)与 [Raft 论文，第 5–8 节](https://raft.github.io/raft.pdf)。校验结果用于补齐对应映射卡片的前提和证明。

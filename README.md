@@ -31,7 +31,7 @@ Open `vault/` as a vault in Obsidian. Edit canvases, cards, and site pages there
 - `vault/plans/`: planning notes, excluded from the published site.
 
 Canvas file references are relative to `vault/`, such as
-`notes/distributed-consensus/majority.md`. Obsidian updates links when files move.
+`notes/distributed-consensus/quorum.md`. Obsidian updates links when files move.
 New notes default to `notes/`, pasted attachments to `notes/attachments/`, and
 note links use relative paths. Create or move maps into `canvases/`.
 Local workspace state and trash are ignored by Git; Obsidian settings are
