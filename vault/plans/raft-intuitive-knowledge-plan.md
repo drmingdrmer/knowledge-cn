@@ -2,7 +2,7 @@
 
 Source article: [重新理解分布式共识：Raft 与 Paxos 的共同结构](/Users/drdrxp/xp/vcs/github.com/openacid/openacid.github.io/_draft/raft-intuitive/2026-08-08-raft-intuitive-cn.md).
 
-This proposal contains **23 cards: 19 new cards and four existing cards to expand**.
+The original extraction proposal contains **23 cards: 19 new cards and four existing cards to expand**. The DAG execution extension below adds **seven cards**, bringing the plan to **30 cards**. The Chinese canvas currently contains card 1 and all seven extension cards.
 
 Each card should state one claim, its assumptions, and a short proof. In the table, `6, 10 → 11` means card 11 uses both cards 6 and 10. Definitions and protocol rules enter the graph as explicit premises.
 
@@ -10,7 +10,7 @@ Each card should state one claim, its assumptions, and a short proof. In the tab
 
 | ID | Knowledge card and its main claim | Direct proof premises |
 |---|---|---|
-| 1 | **Deterministic replay.** The same initial state and command sequence produce the same state and outputs. | Deterministic state-machine model |
+| 1 | **Deterministic State Machines.** The same initial state and command sequence produce the same state and outputs. | Deterministic state-machine model |
 | 2 | **Prefix-compatible histories.** Replicas may execute different-length prefixes while agreeing throughout their shared execution. | 1 |
 | 3 | **Immutable history trees.** Each globally unique node ID identifies one immutable parent and command. | Model assumptions: `cm1`–`cm3` |
 | 4 | **Monotone union.** Compatible history trees merge by union without overwriting nodes. Concurrent branches remain represented. | 3 |
@@ -53,6 +53,32 @@ Freshness voting + Current-term commit rule ─┴→ Leader Completeness
 ```
 
 The table supplies the additional premises omitted from this compact diagram. The protocol-specific steps follow [Paxos Made Simple, §2](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf) and the [Raft paper, §§5–8](https://raft.github.io/raft.pdf).
+
+## 已创建的 DAG 执行卡片与证明关系
+
+中文 [Canvas](../canvases/distributed-consensus.canvas) 已包含[确定性状态机](../notes/distributed-consensus/deterministic-state-machine.md)及以下七张卡片。Canvas 中的箭头从证明前提指向使用前提的结论；卡片讨论的命令 DAG 则用箭头表示命令执行的先后约束。
+
+| ID | 已创建的知识卡片及主要结论 | 直接证明前提 |
+|---|---|---|
+| 24 | [拓扑序与线性扩张](../notes/distributed-consensus/topological-order-and-linear-extension.md)：有限 DAG 定义偏序，拓扑序是保留该偏序的全序。 | 有限 DAG 模型与可达关系定义 |
+| 25 | [命令可交换性](../notes/distributed-consensus/command-commutativity.md)：交换两条命令保持最终状态；保持逐命令返回值需要更强的语义。 | 确定且有定义的命令转移模型；可交换性定义 |
+| 26 | [依赖完备性](../notes/distributed-consensus/conflict-coverage.md)：每对不可交换命令都由依赖路径排序。 | 系统设计约束，需由依赖生成规则保证 |
+| 27 | [拓扑序的相邻交换引理](../notes/distributed-consensus/adjacent-swap-lemma.md)：任意两种拓扑序可通过交换相邻不可比节点互达。 | 24 |
+| 28 | [拓扑序无关性](../notes/distributed-consensus/topological-order-independence.md)：相同初态与依赖完备的有限 DAG，在任意合法顺序下得到相同终态。 | 1、25、26、27；每个命令实例恰好执行一次 |
+| 29 | [依赖闭合集](../notes/distributed-consensus/dependency-closed-execution.md)：合法执行的已执行集合包含每个节点的全部祖先。 | 24；执行节点前先执行全部直接前驱 |
+| 30 | [相同已执行集合的状态唯一性](../notes/distributed-consensus/state-determined-by-executed-set.md)：相同初态、命令 DAG 和有限依赖闭合集确定唯一状态。 | 28、29 |
+
+```text
+24 拓扑序与线性扩张 → 27 相邻交换引理 ─┐
+1  确定性状态机 ─────────────────────┤
+25 命令可交换性 ─────────────────────┼→ 28 拓扑序无关性 ─┐
+26 依赖完备性（系统约束）─────────────┘                  ├→ 30 相同已执行集合的状态唯一性
+24 拓扑序与线性扩张 → 29 依赖闭合集 ────────────────────┘
+```
+
+执行分支固定相同初态、命令内容与确定性转移规则，并要求每个命令实例恰好执行一次。依赖完备性按选定的结果语义判定冲突：若结论覆盖客户端返回值，就按命令标识比较各次返回值，并使用保持这些返回值的可交换性。依赖完备性是拓扑序无关性的充分条件。
+
+持续增长的 DAG 日志还需要协议保证命令与依赖在应用前确定，并保持已执行节点的祖先集合稳定。原计划中的提案历史树与本节的命令依赖 DAG 属于不同模型；共识协议需要另行证明副本对命令与依赖达成一致。
 
 ## Proposed corrections before extracting the cards
 

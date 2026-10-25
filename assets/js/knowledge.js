@@ -12,6 +12,20 @@ history.replaceState(history.state, '', url)
 try {
   const renderer = await import(board.dataset.renderer)
   await renderer.mount(board)
+  const collapseObserver = new MutationObserver(changes => {
+    for (const change of changes) {
+      const card = change.target
+      if (card.dataset.enlarged === 'true') continue
+
+      const content = card.querySelector('.canvas-node-content')
+      content.scrollTop = 0
+    }
+  })
+  collapseObserver.observe(board.shadowRoot, {
+    attributes: true,
+    attributeFilter: ['data-enlarged'],
+    subtree: true,
+  })
   status.hidden = true
 } catch (error) {
   status.textContent = `知识地图加载失败：${error.message}。请刷新页面重试。`

@@ -45,6 +45,29 @@ templates; a root-relative path can bypass the GitHub Pages project prefix.
 Keep reader-facing pages focused on the knowledge and its connections.
 Put publishing and development instructions in the README.
 
+## Card writing: title, conclusion, proof, then supporting details
+
+Arrange each card from the most important information to supplementary details:
+
+1. Start with one main title using `#`.
+2. Place the key conclusion in the first paragraph, directly below the title.
+   Include the conditions needed to understand the conclusion's scope.
+3. Follow with the proof or derivation. Explain how the conclusion follows
+   from its premises, including any required definitions and assumptions.
+4. Put examples after the proof, followed by further details and references
+   as needed.
+
+Except for the main title and opening conclusion paragraph, all content must
+belong to a section introduced by a `##` subheading. Use `###` for subdivisions
+when needed. Give each subheading a specific description of its section's
+content so readers can see the card's structure at a glance.
+
+Size canvas cards for the knowledge overview: show the main title and opening
+conclusion, with later sections below the initial viewport. Readers select a
+card and press Space to expand it. Keep the full note in the same Markdown file.
+Check that the opening conclusion fits and the first subheading stays below
+the collapsed card's viewport. Use compact spacing to keep proof paths visible.
+
 ## Vendored renderer
 
 When updating `static/renderer/`, copy a specific upstream commit from

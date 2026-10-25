@@ -1,0 +1,22 @@
+{
+	"nodes":[
+		{"id":"deterministic-state-machine","type":"file","file":"notes/distributed-consensus/deterministic-state-machine.md","x":0,"y":0,"width":560,"height":150,"color":"4"},
+		{"id":"topological-order-and-linear-extension","type":"file","file":"notes/distributed-consensus/topological-order-and-linear-extension.md","x":0,"y":-280,"width":560,"height":150,"color":"4"},
+		{"id":"command-commutativity","type":"file","file":"notes/distributed-consensus/command-commutativity.md","x":0,"y":280,"width":560,"height":170,"color":"4"},
+		{"id":"conflict-coverage","type":"file","file":"notes/distributed-consensus/conflict-coverage.md","x":0,"y":560,"width":560,"height":150,"color":"3"},
+		{"id":"adjacent-swap-lemma","type":"file","file":"notes/distributed-consensus/adjacent-swap-lemma.md","x":800,"y":-280,"width":560,"height":200,"color":"5"},
+		{"id":"topological-order-independence","type":"file","file":"notes/distributed-consensus/topological-order-independence.md","x":1600,"y":160,"width":600,"height":150,"color":"6"},
+		{"id":"dependency-closed-execution","type":"file","file":"notes/distributed-consensus/dependency-closed-execution.md","x":800,"y":840,"width":560,"height":150,"color":"5"},
+		{"id":"state-determined-by-executed-set","type":"file","file":"notes/distributed-consensus/state-determined-by-executed-set.md","x":2400,"y":560,"width":600,"height":170,"color":"6"}
+	],
+	"edges":[
+		{"id":"linear-extension-to-swap-lemma","fromNode":"topological-order-and-linear-extension","fromSide":"right","toNode":"adjacent-swap-lemma","toSide":"left","toEnd":"arrow"},
+		{"id":"determinism-to-order-independence","fromNode":"deterministic-state-machine","fromSide":"right","toNode":"topological-order-independence","toSide":"left","toEnd":"arrow"},
+		{"id":"commutativity-to-order-independence","fromNode":"command-commutativity","fromSide":"right","toNode":"topological-order-independence","toSide":"left","toEnd":"arrow"},
+		{"id":"coverage-to-order-independence","fromNode":"conflict-coverage","fromSide":"right","toNode":"topological-order-independence","toSide":"left","toEnd":"arrow"},
+		{"id":"swap-lemma-to-order-independence","fromNode":"adjacent-swap-lemma","fromSide":"right","toNode":"topological-order-independence","toSide":"left","toEnd":"arrow"},
+		{"id":"partial-order-to-closed-set","fromNode":"topological-order-and-linear-extension","fromSide":"right","toNode":"dependency-closed-execution","toSide":"left","toEnd":"arrow"},
+		{"id":"order-independence-to-unique-state","fromNode":"topological-order-independence","fromSide":"right","toNode":"state-determined-by-executed-set","toSide":"left","toEnd":"arrow"},
+		{"id":"closed-set-to-unique-state","fromNode":"dependency-closed-execution","fromSide":"right","toNode":"state-determined-by-executed-set","toSide":"left","toEnd":"arrow"}
+	]
+}
