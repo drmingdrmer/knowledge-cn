@@ -22,11 +22,25 @@ python3 tests/test_site.py
 
 ## Add content
 
-Hugo pages live in `content/`. A normal Markdown page needs `title` and
-`description` in its YAML front matter.
+Open `vault/` as a vault in Obsidian. Edit canvases, cards, and site pages there.
 
-Maps live in `static/canvases/`; the notes they reference live in `static/vault/`.
-File paths in a canvas are relative to that vault root. A map's Hugo page uses:
+- `vault/canvases/`: maps, including nested topic folders.
+- `vault/notes/<topic>/`: Markdown cards and attachments referenced by maps.
+- `vault/pages/`: Hugo pages, including the home page, guide, and topic pages.
+- `vault/plans/`: planning notes, excluded from the published site.
+
+Canvas file references are relative to `vault/`, such as
+`notes/distributed-consensus/majority.md`. Obsidian updates links when files move.
+New notes default to `notes/`, pasted attachments to `notes/attachments/`, and
+note links use relative paths. Create or move maps into `canvases/`.
+Local workspace state and trash are ignored by Git; Obsidian settings are
+excluded from the published site.
+
+Hugo reads pages from `vault/pages/`, publishes cards under `vault/notes/`, and
+publishes canvases under `canvases/` to preserve existing website URLs.
+Earlier Markdown URLs under `vault/` remain available for saved note views.
+Each site page needs `title` and `description` in its YAML front matter.
+A map's page uses:
 
 ```yaml
 ---

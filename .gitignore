@@ -4,3 +4,5 @@
 /resources/
 /test-results/
 __pycache__/
+/vault/.obsidian/workspace*.json
+/vault/.trash/

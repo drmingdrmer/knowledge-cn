@@ -4,6 +4,20 @@ locale: zh-CN
 title: 知识卡片
 enableRobotsTXT: true
 capitalizeListTitles: false
+module:
+  mounts:
+    - source: vault/pages
+      target: content
+    - source: static
+      target: static
+    - source: vault/canvases
+      target: static/canvases
+    - source: vault/notes
+      target: static/vault/notes
+    - source: vault/notes
+      target: static/vault
+      files:
+        - '**/*.md'
 
 disableKinds:
   - section

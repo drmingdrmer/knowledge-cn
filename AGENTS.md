@@ -6,9 +6,12 @@ scoped to this repository unless the user requests work elsewhere.
 
 ## Source files and generated output
 
-- `content/`: Hugo pages, including the home page, reader guide, and map pages.
-- `static/canvases/`: Obsidian JSON Canvas files.
-- `static/vault/`: Markdown notes and attachments referenced by canvases.
+- `vault/`: the Obsidian vault; edit all knowledge Markdown and canvases here.
+- `vault/pages/`: Hugo pages, including the home page, guide, and map pages.
+- `vault/canvases/`: Obsidian JSON Canvas files.
+- `vault/notes/<topic>/`: Markdown cards and attachments referenced by canvases.
+- `vault/plans/`: planning notes, excluded from the published site.
+- `vault/.obsidian/`: shared Obsidian settings; local workspace files are ignored.
 - `layouts/`: Hugo templates and Markdown render hooks.
 - `assets/`: CSS and JavaScript processed and fingerprinted by Hugo.
 - `static/renderer/`: vendored canvas renderer, libraries, fonts, and licenses.
@@ -24,8 +27,14 @@ A map page also needs `layout: canvas` and a `canvas` path such as
 See [README.md](README.md#add-content) for the content format.
 
 File paths inside a canvas are relative to the vault root, normally
-`static/vault/`. Preserve those paths when moving or copying notes and
-attachments. Keep a Hugo topic page for every published canvas.
+`vault/`. Preserve those paths when moving or copying notes and attachments.
+Keep a Hugo topic page in `vault/pages/` for every published canvas.
+
+Hugo reads `vault/pages/` as content, mounts `vault/canvases/` at
+`static/canvases`, and mounts `vault/notes/` at `static/vault/notes`.
+A Markdown-only mount at `static/vault` preserves earlier note URLs.
+Mount these directories separately so Hugo watches edits in each component.
+Obsidian settings, trash, and plans stay outside the published mounts.
 
 The production URL includes `/knowledge-cn/`. Keep configured asset, canvas,
 and vault paths relative to the site base URL, without a leading slash.

@@ -88,7 +88,63 @@ class BuiltSiteTests(unittest.TestCase):
                 actual.append(canvas)
         canvas_root = OUTPUT / "canvases"
         expected = list(canvas_root.rglob("*.canvas"))
+        notes_root = OUTPUT / "vault/notes"
+        expected.extend(notes_root.rglob("*.canvas"))
         self.assertCountEqual(actual, expected)
+
+    def test_canvas_files_resolve_inside_the_obsidian_vault(self):
+        vault = REPOSITORY / "vault"
+        vault = vault.resolve()
+        for canvas in vault.rglob("*.canvas"):
+            relative = canvas.relative_to(vault)
+            if relative.parts[0] not in {"canvases", "notes"}:
+                continue
+            source = canvas.read_text(encoding="utf-8")
+            data = json.loads(source)
+            for node in data.get("nodes", []):
+                if node["type"] != "file":
+                    continue
+                target = vault / node["file"]
+                target = target.resolve()
+                within_vault = target.is_relative_to(vault)
+                self.assertTrue(within_vault, str(canvas))
+                exists = target.is_file()
+                self.assertTrue(exists, f"{canvas}: {node['file']}")
+
+    def test_vault_files_are_published_unchanged(self):
+        vault = REPOSITORY / "vault"
+        excluded = {".obsidian", ".trash", "pages", "plans"}
+        for source in vault.rglob("*"):
+            if not source.is_file():
+                continue
+            relative = source.relative_to(vault)
+            if relative.parts[0] in excluded:
+                continue
+            if relative.parts[0] == "canvases":
+                published = OUTPUT / relative
+            else:
+                published = OUTPUT / "vault" / relative
+            actual = published.read_bytes()
+            expected = source.read_bytes()
+            self.assertEqual(actual, expected, str(relative))
+
+    def test_earlier_note_urls_remain_available(self):
+        notes = REPOSITORY / "vault/notes"
+        for source in notes.rglob("*.md"):
+            relative = source.relative_to(notes)
+            published = OUTPUT / "vault" / relative
+            actual = published.read_bytes()
+            expected = source.read_bytes()
+            self.assertEqual(actual, expected, str(relative))
+
+    def test_vault_settings_and_authoring_sources_are_not_published(self):
+        for directory in [".obsidian", ".trash", "pages", "plans"]:
+            published = OUTPUT / "vault" / directory
+            files = []
+            for path in published.rglob("*"):
+                if path.is_file():
+                    files.append(str(path))
+            self.assertEqual(files, [])
 
 
 if __name__ == "__main__":
