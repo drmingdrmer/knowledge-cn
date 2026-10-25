@@ -1,0 +1,18 @@
+{{ define "main" }}
+  <header class="canvas-heading">
+    <a href="{{ site.Home.RelPermalink }}">全部主题</a>
+    <h1>{{ .Title }}</h1>
+    <p id="canvas-help">箭头从证明所需的前提指向结论。</p>
+  </header>
+  <p class="canvas-message" id="canvas-status" role="status">正在加载知识地图…</p>
+  <div id="knowledge-board" role="region" aria-label="{{ .Title }}知识地图"
+       aria-describedby="canvas-help" aria-busy="true"
+       data-canvas="{{ .Params.canvas | relURL }}"
+       data-vault="{{ .Params.vault | default site.Params.knowledge.vault | relURL }}"
+       data-renderer="{{ site.Params.knowledge.renderer | relURL }}"></div>
+  <noscript><p class="canvas-message">启用 JavaScript 后即可浏览知识地图。</p></noscript>
+  {{ with resources.Get "js/knowledge.js" }}
+    {{ $script := . | minify | fingerprint "sha256" }}
+    <script type="module" src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}"></script>
+  {{ end }}
+{{ end }}

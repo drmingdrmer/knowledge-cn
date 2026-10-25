@@ -1,0 +1,52 @@
+baseURL: https://drmingdrmer.github.io/knowledge-cn/
+defaultContentLanguage: zh
+locale: zh-CN
+title: 知识卡片
+enableRobotsTXT: true
+capitalizeListTitles: false
+
+disableKinds:
+  - section
+  - taxonomy
+  - term
+  - rss
+
+menus:
+  main:
+    - name: 阅读指南
+      pageRef: /start-here
+      weight: 10
+    - name: 博客
+      url: https://blog.openacid.com/
+      weight: 20
+    - name: GitHub
+      url: https://github.com/drmingdrmer/knowledge-cn
+      weight: 30
+
+params:
+  name: Zhang Yanpo
+  description: 用知识卡片和依赖图理解分布式系统、数学与软件。
+  logo: assets/images/logo/icon-lemon-margin.png
+  knowledge:
+    renderer: renderer/canvas-render.js
+    vault: vault/
+
+markup:
+  goldmark:
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          block:
+            - ['\[', '\]']
+            - ['$$', '$$']
+          inline:
+            - ['\(', '\)']
+            - ['$', '$']
+  highlight:
+    lineNos: false
+    noClasses: true
+    style: github
+  tableOfContents:
+    startLevel: 2
+    endLevel: 3

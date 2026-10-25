@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {{ $title := site.Title }}
+  {{ if not .IsHome }}
+    {{ $title = .Title | markdownify | plainify | htmlUnescape }}
+  {{ end }}
+  {{ $description := .Description | default site.Params.description | markdownify | plainify | htmlUnescape }}
+  <title>{{ $title }}{{ if not .IsHome }} - {{ site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ $description }}">
+  <link rel="canonical" href="{{ .Permalink }}">
+  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+  <meta property="og:site_name" content="{{ site.Title }}">
+  <meta property="og:title" content="{{ $title }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:description" content="{{ $description }}">
+  <meta name="author" content="{{ site.Params.name }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ relURL "assets/images/favicon/apple-touch-icon.png" }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ relURL "assets/images/favicon/favicon-32x32.png" }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ relURL "assets/images/favicon/favicon-16x16.png" }}">
+  <meta name="theme-color" content="#ffffff">
+  {{ with resources.Get "css/main.css" }}
+    {{ $style := . | minify | fingerprint "sha256" }}
+    <link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
+  {{ end }}
+  {{ if .Params.mathjax }}
+    {{ partialCached "math.html" . }}
+  {{ end }}
+</head>
+<body{{ if .Params.canvas }} class="canvas-page"{{ end }}>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="site-header">
+    <a class="site-title" href="{{ site.Home.RelPermalink }}">
+      <img src="{{ site.Params.logo | relURL }}" alt="">{{ site.Title }}
+    </a>
+    <nav aria-label="主导航">
+      {{ range site.Menus.main }}
+        <a href="{{ .URL }}">{{ .Name }}</a>
+      {{ end }}
+    </nav>
+  </header>
+  <main id="main" class="site-main">
+    {{ block "main" . }}{{ end }}
+  </main>
+  <footer class="site-footer">
+    <small>
+      &copy; {{ now.Year }} {{ site.Params.name }}
+    </small>
+  </footer>
+</body>
+</html>

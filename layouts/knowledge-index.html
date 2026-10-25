@@ -1,0 +1,17 @@
+{{ define "main" }}
+  <section class="hero">
+    <p class="eyebrow">{{ site.Params.name }}的知识库</p>
+    <h1>{{ .Title }}</h1>
+    <div class="lead">{{ .Content }}</div>
+    <p><a href="{{ relURL "start-here/" }}">知识地图阅读指南 &rarr;</a></p>
+  </section>
+  <nav class="post-list" aria-label="知识主题">
+    {{ range where site.RegularPages.ByTitle "Params.canvas" "ne" nil }}
+      <article>
+        <p class="topic-type">知识地图</p>
+        <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+        <p>{{ .Description }}</p>
+      </article>
+    {{ end }}
+  </nav>
+{{ end }}

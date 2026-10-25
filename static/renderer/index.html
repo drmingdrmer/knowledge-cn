@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  Obsidian-like renderer for JSON Canvas (.canvas) files.
+
+  Run:  ./serve.sh          then open http://localhost:8000/
+  A web server is required: the page fetches the .canvas file and the notes it
+  embeds, which file:// blocks.
+
+  URL query parameters:
+
+    ?canvas=<path>    the .canvas file to render, relative to this page
+    &vault=<path>     the vault root that file nodes resolve against;
+                      defaults to the directory holding the canvas file
+    &attachments=<path>
+                      the attachment folder, under the vault root, where an
+                      image a note names by its file name alone is looked up
+    &cards=<size>     draw every card at one size — actual, wide or compact —
+                      instead of the size each card stores
+    &at=<x>,<y>,<zoom>
+                      open the board with canvas point (x, y) at the centre of
+                      the window, at this zoom
+    &focus=<id>       open the board fitted to the card with this id
+    ?note=<path>      render one markdown file on its own, for reading
+    ?raw=<path>       show that file's markdown source instead
+
+  Each path is relative to this page, or an https URL on a host listed in
+  REMOTE_HOSTS in canvas-render.js — which lets a canvas and its notes be read
+  straight out of a GitHub repository, provided the host sends CORS headers.
+
+  A note card's title links to ?note=, and the icon beside it to ?raw=.
+  The address bar follows the view as at= or focus=, so a copied link opens on
+  the same view.
+
+  canvas-render.js is an ES module. Its mount() draws a board inside an element
+  of any page, with these parameters given to it; see USAGE.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Canvas Render</title>
+<link rel="icon" href="data:,">
+
+<style>
+  /* The board fills the window. canvas-render.css styles only what mount() draws. */
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<script type="module">
+  import { mount } from './canvas-render.js'
+
+  mount(document.body).catch(error => console.error(error))
+</script>
+
+</body>
+</html>
