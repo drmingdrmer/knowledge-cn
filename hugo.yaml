@@ -42,7 +42,7 @@ params:
   description: 用知识卡片和依赖图理解分布式系统、数学与软件。
   logo: assets/images/logo/icon-lemon-margin.png
   knowledge:
-    renderer: renderer/canvas-render.js
+    renderer: https://cdn.jsdelivr.net/gh/drmingdrmer/obsidian-canvas-render@v0.1.0/canvas-render.js
     vault: vault/
 
 markup:

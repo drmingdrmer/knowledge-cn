@@ -14,7 +14,7 @@ scoped to this repository unless the user requests work elsewhere.
 - `vault/.obsidian/`: shared Obsidian settings; local workspace files are ignored.
 - `layouts/`: Hugo templates and Markdown render hooks.
 - `assets/`: CSS and JavaScript processed and fingerprinted by Hugo.
-- `static/renderer/`: vendored canvas renderer, libraries, fonts, and licenses.
+- `static/`: site images and other locally hosted assets.
 - `hugo.yaml`: site URL, menus, renderer paths, and Markdown settings.
 - `tests/test_site.py`: checks generated links, map pages, and bundled notes.
 - `public/` and `resources/`: ignored build output; edit source files instead.
@@ -68,15 +68,17 @@ card and press Space to expand it. Keep the full note in the same Markdown file.
 Check that the opening conclusion fits and the first subheading stays below
 the collapsed card's viewport. Use compact spacing to keep proof paths visible.
 
-## Vendored renderer
+## Remote renderer
 
-When updating `static/renderer/`, copy a specific upstream commit from
-`drmingdrmer/obsidian-canvas-render` with its libraries, fonts, and licenses.
-Update the recorded revision in README.md. Keep the renderer's assets
-locally served so maps use the same origin as their notes.
+The browser imports `params.knowledge.renderer` from jsDelivr, pinned to
+`drmingdrmer/obsidian-canvas-render` tag `v0.1.0`. CSS, libraries, and fonts
+resolve relative to that module URL. Canvas files and notes stay on this site.
+Keep the renderer URL pinned to an explicit release. Update `hugo.yaml` and
+README.md together when upgrading. Load renderer assets at runtime; keep
+vendored copies and build-time downloads out of this repository.
 
 The board mounts inside a shadow root. Site styles belong in
-`assets/css/main.css`; renderer styles belong to the vendored bundle.
+`assets/css/main.css`; renderer changes belong in its upstream repository.
 
 ## Build and verification
 

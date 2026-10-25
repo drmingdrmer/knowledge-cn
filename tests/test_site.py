@@ -64,13 +64,18 @@ class BuiltSiteTests(unittest.TestCase):
             for target in document.links:
                 self.local_file(page, target)
 
-    def test_maps_have_their_renderer_and_notes(self):
+    def test_maps_use_the_tagged_remote_renderer_and_local_notes(self):
+        expected_renderer = (
+            "https://cdn.jsdelivr.net/gh/drmingdrmer/"
+            "obsidian-canvas-render@v0.1.0/canvas-render.js"
+        )
         for page in OUTPUT.rglob("*.html"):
             document = Document(page)
             if not document.board:
                 continue
             canvas = self.local_file(page, document.board["data-canvas"])
-            self.local_file(page, document.board["data-renderer"])
+            renderer = document.board["data-renderer"]
+            self.assertEqual(renderer, expected_renderer)
             source = canvas.read_text(encoding="utf-8")
             data = json.loads(source)
             for node in data.get("nodes", []):

@@ -6,14 +6,15 @@
 
 The site uses Hugo 0.164.0 and adapts the templates and styles from
 [OpenACID Blog](https://github.com/openacid/openacid.github.io). Its interactive
-maps use a local copy of
-[obsidian-canvas-render](https://github.com/drmingdrmer/obsidian-canvas-render)
-at commit `8b5cdc33af5beb644bf8ab07e25c406c29e615a4`. The renderer's license and
-the libraries' licenses are included under `static/renderer/`.
+maps load [obsidian-canvas-render v0.1.0](https://github.com/drmingdrmer/obsidian-canvas-render/tree/v0.1.0)
+directly from jsDelivr in the browser. `params.knowledge.renderer` in
+`hugo.yaml` sets the tagged URL. The renderer's CSS, libraries, and fonts load
+from the same CDN path; canvases and notes are served by this site.
 
 ## Preview and verify
 
-Run `hugo server` to preview the site. The production checks are:
+Run `hugo server` to preview the site. Browsing a map requires access to
+`cdn.jsdelivr.net`. The production checks are:
 
 ```sh
 hugo --gc --minify --panicOnWarning
